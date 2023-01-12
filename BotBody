@@ -2,6 +2,8 @@ from extensions import APIException, CryptoConverter
 import telebot
 from Token import bot_token, keys
 
+# https://t.me/Merkalyutbot бот в тг
+
 
 bot = telebot.TeleBot(bot_token)
 
