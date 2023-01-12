@@ -1,5 +1,10 @@
 bot_token = '2028617006:AAErh99SDAeFpv-h9RH0A7RCeYXVh6297dQ'
 
+keys = {
+    'доллар': 'USD',
+    'евро': 'EUR',
+    'рубль': 'RUB',
+}
 
 
 
