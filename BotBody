@@ -1,48 +1,9 @@
-import json
-import requests
+from extensions import APIException, CryptoConverter
 import telebot
-from Token import bot_token
+from Token import bot_token, keys
 
 
 bot = telebot.TeleBot(bot_token)
-
-keys = {
-    'доллар': 'USD',
-    'евро': 'EUR',
-    'рубль': 'RUB'
-}
-
-
-class APIException(Exception):
-    pass
-
-
-class CryptoConverter:
-    @staticmethod
-    def convert(self, quote: str, base: str, amount: str):
-
-        if quote == base:
-            raise APIException(f'Невозможно рассчитать одинаковые валюты {base}')
-
-        try:
-            quote_ticker = keys[quote]
-        except KeyError:
-            raise APIException(f'Не удалось обработать валюту {quote}')
-
-        try:
-            base_ticker = keys[base]
-        except KeyError:
-            raise APIException(f'Не удалось обработать валюту {base}')
-
-        try:
-            amount = float(amount)
-        except ValueError:
-            raise APIException(f'Не удалось обработать кол-во {amount}')
-
-        r = requests.get(f'https://v6.exchangerate-api.com/v6/0f7d02e333fc3568f1abfa80/latest/{keys[quote]}')
-        data = json.loads(r.content)
-        money = data['conversion_rates'][keys[base]] * float(amount)
-        return money
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -67,18 +28,22 @@ def values(message: telebot.types.Message):
 
 @bot.message_handler(content_types=['text'])
 def calculate(message: telebot.types.Message):
-    value = message.text.split()
+    try:
+        value = message.text.split()
 
-    if len(value) != 3:
-        bot.reply_to(message, "Слишком много параметров")
-        raise APIException('Слишком много параметров')
+        if len(value) != 3:
+            raise APIException('Слишком много параметров')
 
-    quote, base, amount = value
+        quote, base, amount = value
 
-    total_base = CryptoConverter.convert(quote, base, amount)
-
-    text = f'Цена {amount} {quote} в {base} равна: {total_base}'
-    bot.send_message(message.chat.id, text)
+        total_base = CryptoConverter.convert(quote, base, amount)
+    except APIException as e:
+        bot.reply_to(message, f'Ошибка пользователя.\n{e}')
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Не удалось обработать команду\n{e}")
+    else:
+        text = f'Цена {amount} {quote} в {base} равна: {total_base}'
+        bot.send_message(message.chat.id, text)
 
 
 bot.polling(none_stop=True)
